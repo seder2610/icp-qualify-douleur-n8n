@@ -1,0 +1,231 @@
+{
+  "name": "ICP Qualify — Douleur ops agence (v1)",
+  "nodes": [
+    {
+      "id": "icp-sticky",
+      "name": "📋 Guide ICP douleur",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        60,
+        40
+      ],
+      "parameters": {
+        "width": 520,
+        "height": 220,
+        "content": "## ICP par DOULEUR — pas par secteur\\n\\n**Score** : reporting (45) + onboarding (35) + integrations (20) + signaux structure\\n\\n**demo_mode: true** → 5 prospects fictifs multi-specialites\\n\\n**Sortie** : icp_score, tier A/B/C, angle, message_hook, CTA DEMO\\n\\nSeuil : min_score (defaut 55)"
+      }
+    },
+    {
+      "id": "icp-trigger",
+      "name": "▶️ Lancer qualification ICP",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        60,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "icp-config",
+      "name": "⚙️ Configuration ICP",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        300,
+        300
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "niche_label",
+              "value": "Ops agence — douleur reporting/onboarding",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "min_score",
+              "value": 55,
+              "type": "number"
+            },
+            {
+              "id": "c3",
+              "name": "weight_reporting",
+              "value": 45,
+              "type": "number"
+            },
+            {
+              "id": "c4",
+              "name": "weight_onboarding",
+              "value": 35,
+              "type": "number"
+            },
+            {
+              "id": "c5",
+              "name": "weight_integrations",
+              "value": 20,
+              "type": "number"
+            },
+            {
+              "id": "c6",
+              "name": "demo_mode",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "c7",
+              "name": "cta_keyword",
+              "value": "DEMO",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "icp-mock",
+      "name": "Prospects (demo ou import)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        540,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const cfg = $('⚙️ Configuration ICP').first().json;\nconst demo = cfg.demo_mode !== false && cfg.demo_mode !== 'false';\n\nif (!demo) {\n  return $input.all();\n}\n\nconst prospects = [\n  { name: 'Camille Rousseau', role: 'Fondatrice', company: 'Studio Alto — SEO & contenu', agency_type: 'SEO / contenu', team_size: 14, client_count: 22, decision_maker: 'oui', recurring_reports: 'oui', linkedin_bio: 'On livre des rapports SEO mensuels a chaque client. Trop de temps en copier-coller Search Console.', recent_post: 'Le reporting client nous mange 6h par semaine.', website_snippet: 'Agence SEO Paris' },\n  { name: 'Marc Duval', role: 'CEO', company: 'Pulse Social', agency_type: 'Social media', team_size: 18, client_count: 35, decision_maker: 'oui', recurring_reports: 'oui', linkedin_bio: 'Social ads + reporting client hebdo. Onboarding nouveau client = checklist Notion refaite a la main.', recent_post: '', website_snippet: '' },\n  { name: 'Leila Benali', role: 'Directrice ops', company: 'Fullstack Com', agency_type: 'Full-service', team_size: 42, client_count: 48, decision_maker: 'oui', recurring_reports: 'oui', linkedin_bio: 'CRM HubSpot + Sheets + Slack — rien n est connecte. Rapports multi-canaux chaque lundi.', recent_post: 'Cherche a automatiser onboarding client.', website_snippet: '' },\n  { name: 'Thomas Girard', role: 'Media Buyer', company: 'Ads Only FR', agency_type: 'SEA', team_size: 6, client_count: 12, decision_maker: 'non', recurring_reports: 'oui', linkedin_bio: 'Google Ads Meta Ads', recent_post: 'ROAS tips', website_snippet: '' },\n  { name: 'Sophie Martin', role: 'Consultante solo', company: 'SM Conseil', agency_type: 'solopreneur', team_size: 1, client_count: 3, decision_maker: 'oui', recurring_reports: 'non', linkedin_bio: 'Freelance marketing', recent_post: '', website_snippet: '' }\n];\n\nreturn prospects.map(p => ({ json: { ...p, source: 'demo', niche: 'ops-agence' } }));"
+      }
+    },
+    {
+      "id": "icp-score",
+      "name": "Scorer par douleur",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const cfg = $('⚙️ Configuration ICP').first().json;\nconst minScore = Number(cfg.min_score) || 55;\nconst pains = {\n  reporting: {\n    weight: Number(cfg.weight_reporting) || 45,\n    signals: ['reporting', 'rapport client', 'rapport hebdo', 'rapport mensuel', 'looker', 'data studio', 'dashboard client', 'point client', 'compte rendu', 'synthese client', 'livrer des rapports', 'reporting client']\n  },\n  onboarding: {\n    weight: Number(cfg.weight_onboarding) || 35,\n    signals: ['onboarding', 'nouveau client', 'kick-off', 'kick off', 'checklist client', 'brief client', 'entree client', 'setup client', 'bienvenue client']\n  },\n  integrations: {\n    weight: Number(cfg.weight_integrations) || 20,\n    signals: ['copier-coller', 'copier coller', 'manuel', 'notion', 'crm', 'slack', 'sheets', 'zapier', 'make.com', 'make ', 'integre', 'connecter les outils', 'process interne']\n  }\n};\n\nfunction norm(s) { return (s || '').toLowerCase().normalize('NFD').replace(/\\p{Diacritic}/gu, ''); }\n\nconst items = $input.all().map(i => i.json);\nconst results = [];\n\nfor (const p of items) {\n  const blob = norm([\n    p.company, p.company_description, p.role, p.name,\n    p.linkedin_bio, p.recent_post, p.website_snippet, p.notes, p.agency_type\n  ].filter(Boolean).join(' '));\n\n  const clientCount = Number(p.client_count) || 0;\n  const teamSize = Number(p.team_size) || 0;\n  let score = 0;\n  const matched = { reporting: [], onboarding: [], integrations: [] };\n  const reasons = [];\n\n  for (const [key, cfgPain] of Object.entries(pains)) {\n    let hits = 0;\n    for (const sig of cfgPain.signals) {\n      const s = norm(sig);\n      if (blob.includes(s)) {\n        hits++;\n        if (matched[key].length < 3) matched[key].push(sig);\n      }\n    }\n    if (hits > 0) {\n      const pts = Math.min(cfgPain.weight, hits * Math.ceil(cfgPain.weight / 2));\n      score += pts;\n      reasons.push(`${key}: ${matched[key].join(', ') || hits + ' signal(s)'}`);\n    }\n  }\n\n  // Structure agence (pas secteur)\n  if (teamSize >= 5 && teamSize <= 60) { score += 8; reasons.push('taille agence 5-60'); }\n  if (clientCount >= 8) { score += 10; reasons.push('portefeuille clients >= 8'); }\n  if (p.decision_maker === true || p.decision_maker === 'oui') { score += 7; reasons.push('decideur'); }\n  if (p.recurring_reports === true || p.recurring_reports === 'oui') { score += 12; reasons.push('rapports recurrents confirmes'); }\n\n  // Pas de penalite secteur — bonus si type agence generique\n  const types = norm(p.agency_type || '');\n  if (types && !types.includes('ecommerce') && !types.includes('solopreneur')) {\n    score += 3;\n  }\n\n  score = Math.min(100, score);\n  const primaryPain = ['reporting', 'onboarding', 'integrations']\n    .sort((a, b) => (matched[b].length * pains[b].weight) - (matched[a].length * pains[a].weight))[0];\n  const tier = score >= 75 ? 'A' : score >= minScore ? 'B' : 'C';\n  const qualified = score >= minScore;\n\n  let angle = '';\n  if (matched.reporting.length) angle = `Reporting auto — ${p.company || p.name}`;\n  else if (matched.onboarding.length) angle = `Onboarding auto — ${p.company || p.name}`;\n  else if (matched.integrations.length) angle = `Outils connectes — ${p.company || p.name}`;\n  else angle = `Ops agence — ${p.company || p.name}`;\n\n  results.push({\n    json: {\n      ...p,\n      icp_score: score,\n      icp_tier: tier,\n      icp_qualified: qualified ? 'oui' : 'non',\n      icp_primary_pain: primaryPain,\n      icp_matched_signals: matched,\n      icp_reasons: reasons,\n      icp_angle: angle,\n      icp_cta: 'DEMO',\n      icp_message_hook: qualified\n        ? `Bonjour ${(p.name || '').split(' ')[0] || ''}, je vois que ${p.company || 'votre agence'} livre des rapports clients regulierement — j'ai un workflow qui compile + redige le commentaire chaque semaine. Je vous envoie un Loom de 2 min si vous tapez DEMO ?`\n        : '',\n      scored_at: new Date().toISOString()\n    }\n  });\n}\n\nreturn results.sort((a, b) => b.json.icp_score - a.json.icp_score);"
+      }
+    },
+    {
+      "id": "icp-filter",
+      "name": "Qualifiés only",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1020,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "q1",
+              "leftValue": "={{ $json.icp_qualified }}",
+              "rightValue": "oui",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "icp-summary",
+      "name": "Résumé qualification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const all = $('Scorer par douleur').all().map(i => i.json);\nconst qualified = all.filter(x => x.icp_qualified === 'oui');\nconst a = qualified.filter(x => x.icp_tier === 'A');\nreturn [{ json: {\n  total: all.length,\n  qualified: qualified.length,\n  tier_a: a.length,\n  top: qualified.slice(0, 5).map(x => ({ name: x.name, company: x.company, score: x.icp_score, pain: x.icp_primary_pain, angle: x.icp_angle })),\n  niche: $('⚙️ Configuration ICP').first().json.niche_label\n}}];"
+      }
+    }
+  ],
+  "connections": {
+    "▶️ Lancer qualification ICP": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Configuration ICP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Configuration ICP": {
+      "main": [
+        [
+          {
+            "node": "Prospects (demo ou import)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospects (demo ou import)": {
+      "main": [
+        [
+          {
+            "node": "Scorer par douleur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scorer par douleur": {
+      "main": [
+        [
+          {
+            "node": "Qualifiés only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualifiés only": {
+      "main": [
+        [
+          {
+            "node": "Résumé qualification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "icp"
+    },
+    {
+      "name": "prospection"
+    },
+    {
+      "name": "v1"
+    }
+  ]
+}
